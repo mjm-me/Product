@@ -24,151 +24,114 @@ Todo el código debe estar en un solo fichero, excepto el mock de productos que 
 
 ## Dependencias esenciales para este proyecto:
 
-Instalo Node, TypeScript y Express.js
+Instalo Node, TypeScript y Express.js y también instalo las dependencias de eslint y prettier para mejorar la calidad del código y mantener un estilo consistente. Al final dejo mi package.json así:
+"devDependencies": {
+"@eslint/js": "^9.19.0",
+"@types/express": "^5.0.1",
+"@types/node": "^22.12.0",
+"eslint": "^9.19.0",
+"prettier": "^3.4.2",
+"typescript": "^5.7.3",
+"typescript-eslint": "^8.22.0"
+},
 
-@types/body-parser y @types/express:
+# Desarrollo proyecto
 
-Proporcionan tipos para las bibliotecas body-parser y express, lo cual es esencial cuando usas TypeScript.
+Me creo un proyecto llamado Producto donde instalo todo lo necesario.
 
-@types/node:
+## index.js
 
-Fundamental para trabajar con las APIs internas de Node.js en TypeScript.
+Creo la carpeta src donde creo el archivo index.js, me va ayudar a ver la entrada principal para mi servidor.
+He configurado el servidor Express, definiendo rutas y manejando solicitudes.
+Hace que la API funcione como un intermediario para consultar mi base de datos de mock.js.
+Configuro el servidor usando express. Lo necesito para definir la ruta que usaré para pedir el CRUD a mis datos.
 
-typescript:
+## mock.js
 
-Obligatoria, ya que el proyecto está en TypeScript.
+Aquí creo mi base de datos local que servirá de modelo con datos de prueba para que mi API funcione correctamente durante el desarrollo.
 
-body-parser, express, y cualquier otra dependencia funcional que instales (como uuid si la utilizaste para generar IDs).
+- Importar randomUUID del módulo crypto porque genera identificadores únicos (id) para cada producto. Así cada producto tiene un id único. son seguros y cumplen con estándares globales de identificación. Crypto forma parte de Node.js.
+- Luego defino el array de mis productos para simular la base de datos que se quiere en memoria. Con este esquema puedo probar la API sin necesidad de conectarme a una base de datos real.
+- Con estos datos podré hacer luego las operaciones de CRUD que me piden
+- Las propiedades created_at y updated_at me dejan registrar el historial del producto que podría servir par en el futuro hacer informes.
+- La propiedad is_active será un booleano que nos indicará si hay producto para vender o hay que pedirlo.
 
+## server1.js
 
+Aquí construyo la API que gestiona operaciones CRUD (Crear, Leer, Actualizar, Eliminar) de mi base de datos local.
 
-npm install
-cuando tenga ya al menos index.
-git init
+- Tengo que configuro el servidor de Express para manejar el servidor HTTP.
+- Importo randomUUID que me servirá para generar un id único cuando se crean nuevos productos. Ya lo trae Node.
+- Importo products desde mock.js para usarlos como base de datos y trabajar con esa Api.
+- app.use(express.json()) es un middleware que uso para que el servidor pueda manejar solicitudes JSON (con POST y PATCH).
+- Ahora implementación de los endpoints que me piden en el proyecto:
+  GET /products
+  GET /products/:id (aquí busco por uin producto específico que me lo da el id único)
+  POST /products
+  PATCH /products/:id
+  DELETE /products/:id
+-
 
-git add .
-git commit -m ""
+### get/products
 
-# Proyecto de Películas
+Devuelve toda la lista de productos como un array JSON.
 
-Este proyecto es un proyecto simple para el curso IFCD0210.
+### get/id
 
-El proyecto es una aplicación CRUD simple para gestionar películas.
+Busca un producto específico por su id en el array products.
+Lo tengo que encontrar mediante el id:
+const { id } = req.params;
+const product = products.find((p) => p.id === id);
+Si existe, me lo devuelve como respuesta:
+res.json(product);
+} else {
+Si no está, me devuelve un error 404 (No encontrado).
+res.status(404).send('Producto no encontrado');
 
-## Configuración inicial
+### post/id
 
-A partir de un proyecto anterior, se incluye la instalación/configuración de:
+Creará un nuevo producto en función de los datos enviados en el cuerpo de la solicitud (name, price, stock, is_active).
+El id no lo pongo porque se genera de manera automática con el randomUUID.
 
-- `prettier`
-- `eslint` / `typescript-eslint`
-- `typescript`
-- `vitest`
-- `cross-env`
-- `debug`
-- `zod`
-- `express`
-  - `cors`
-  - `body-parser`
+const { name, price, stock, is_active } = req.body;
+const newProduct = {
+id: randomUUID(),
+name,
+price,
+stock,
+is_active,
+created_at: new Date(),
+updated_at: new Date(),
+};
 
-Igualmente instalados `prisma` y `@prisma/client`
+Me devuelve el producto creado con un código de estado 201 (Creado).
+res.status(201).json(newProduct);
 
-La estructura inicial, tomada de dicho proyecto incluye en src:
+### patch/products/:id
 
-- `index.ts`
-- `app.ts`
-- `server/error-manager.ts`
-- `server/listen-manager.ts`
-- `middleware/debug-logger.ts`
-- `types/http-error.ts`
-- `controllers/base.controller.ts`
-- `controllers/errors.controller.ts`
+Primero tengo que buscar si existe, lo hago por id porque es único
+const { id } = req.params;
+const productIndex = products.findIndex((p) => p.id === id);
+Si el producto existe, actualizo solo los campos proporcionados en el cuerpo de la solicitud (req.body).
+El producto actual
+...products[productIndex], Producto actual
+Sobrescribe los campos con los datos del cuerpo de la solicitud y actualizop la fecha de modificación
+...req.body,
+updated_at: new Date(),
+Luego tiene que volver a poner el nuevo producto en el array
+products[productIndex] = updatedProduct;
+Si no lo encuentra lanzo un error
+res.status(404).send('Producto no encontrado');
 
-En los ficheros procedentes del proyecto anterior es importante actualizar el espacio de nombres de debug, que en este caso será `films`
+### delete/products/:id
 
-En los controladores ya incluidos, sustituiremos la respuesta basada en `res.send` por `res.json` para que la respuesta sea un objeto JSON.
+Para borrar un producto también busco por el id.
+const { id } = req.params;
+const productIndex = products.findIndex((p) => p.id === id);
 
-## Modelo de datos y repositorios con Prisma
+Si existe, lo elimino del array products con splice y lo devuelve como respuesta, en clase siempre decíamos que queríamos informar que se había borrado.
+const [removedProduct] = products.splice(productIndex, 1);
+res.json(removedProduct);
 
-Modelo en Prisma
-Repositorios en Prisma
-Operaciones CRUD
-Verbos HTTP, enrutamiento y controladores
-
-## ATENCIÓN
-
-mirar en index.ts el nombre de la BD que voy a crear
-lin 7. const debug = createDebug('library:server');
-
-mirar en app.ts
-lin 16. const debug = createDebug('library:app');
-lin 13. import { createBooksRouter } from './router/bookRouter.js';
-lin 14. import { BooksController } from './controllers/books.controller.js';
-
-lin40-42 const booksRepo = new BookRepo();
-const booksController = new BooksController(booksRepo);
-const booksRouter = createBooksRouter(booksController);
-
-lin 46. app.use('/api/books', booksRouter);
-
-mirar en middleware/debug-logger
-lin 6.const debug = createDebug(`library:${name}`);
-
-mirar en server/listen-manager.ts
-lin3. const debug = createDebug('library:server:listening');
-mirar en server/error-manager.ts
-lin 4. const debug = createDebug('library:server:errors');
-
-mirar en /controllers/ATENCIÖN al nombre del archivo books.controller.ts
-/controllers/book.controller.ts llama a prisma/client
-lin 3. import { Books } from "@prisma/client";
-lin 4. import { BookCreateDTO, BookIdDTO, BookUpdateDTO } from '../dto/books.dto.js';
-lin 11. export class BooksController
-lin 12. constructor(private repoBooks: Repository<Books>)
-lin 16. private makeResponse(results: Books[], error?: string) {
-
-mirar en prism/schema.prisma
-model Books {
-id String @id @default(uuid()) @map("book_id")
-title String @unique(map: "title")
-author String
-editorial String
-year Int
-pages Int
-available Boolean @default(true)
-
-@@unique([title, year])
-@@index([title])
-@@map("books")
-
-<!--
-API REST
-- Validaciones
---->
-
-## Endpoints
-
-- Películas (estilo e-comerce o administrado)
-
-- `GET /films` - Listado de películas
-- `GET /films/:id` - Detalle de una película
-- `POST /films` - Crear una película [Editor]
-- `PATCH /films/:id` - Actualizar una película [Editor]
-- `DELETE /films/:id` - Borrar una película / [Editor]
-
-- Usuarios
-
-- `GET /users` - Listado de usuarios [Admin]
-- `GET /users/:id` - Detalle de un usuario [Admin / Propio]
-- `POST /users/register` - Crear un usuario (Registrar)
-- `POST /users/login` - Iniciar sesión
-- `PATCH /users/role` - Cambio de Rol [Admin]
-- `PATCH /users/:id` - Actualizar un usuario excepto rol [Propio]
-- `DELETE /users/:id` - Borrar un usuario / Eliminar un usuario [Admin / Propio]
-
-- Reviews (Estilo per-to-per)
-
-- `GET /reviews` - Listado de reviews [User]
-- `GET /reviews/:id` - Detalle de una review [User]
-- `POST /reviews` - Crear una review [User]
-- `PATCH /reviews/:id` - Actualizar una review [Propio]
-- `DELETE /reviews/:id` - Borrar una review / [Propio]
+Si no se encuentra, devuelve un error 404.
+res.status(404).send('Producto no encontrado'); // Error si no se encuentra
