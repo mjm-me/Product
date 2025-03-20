@@ -43,7 +43,6 @@ Me creo un proyecto llamado Producto donde instalo todo lo necesario.
 
 Creo la carpeta src donde creo el archivo index.js, me va ayudar a ver la entrada principal para mi servidor.
 He configurado el servidor Express, definiendo rutas y manejando solicitudes.
-Hace que la API funcione como un intermediario para consultar mi base de datos de mock.js.
 Configuro el servidor usando express. Lo necesito para definir la ruta que usaré para pedir el CRUD a mis datos.
 
 ## mock.js
@@ -58,12 +57,13 @@ Aquí creo mi base de datos local que servirá de modelo con datos de prueba par
 
 ## server1.js
 
+Inicializo una instancia de Express que será mi servidor.
+Con app.use(express.json()) hago que mi servidor pueda procesar las solicitudes con cuerpo en formato JSON (por ejemplo, para el método POST o PATCH).
+
 Aquí construyo la API que gestiona operaciones CRUD (Crear, Leer, Actualizar, Eliminar) de mi base de datos local.
 
 - Tengo que configuro el servidor de Express para manejar el servidor HTTP.
-- Importo randomUUID que me servirá para generar un id único cuando se crean nuevos productos. Ya lo trae Node.
 - Importo products desde mock.js para usarlos como base de datos y trabajar con esa Api.
-- app.use(express.json()) es un middleware que uso para que el servidor pueda manejar solicitudes JSON (con POST y PATCH).
 - Ahora implementación de los endpoints que me piden en el proyecto:
   GET /products
   GET /products/:id (aquí busco por uin producto específico que me lo da el id único)
@@ -84,18 +84,17 @@ const { id } = req.params;
 const product = products.find((p) => p.id === id);
 Si existe, me lo devuelve como respuesta:
 res.json(product);
-} else {
+
 Si no está, me devuelve un error 404 (No encontrado).
 res.status(404).send('Producto no encontrado');
 
 ### post/id
 
-Creará un nuevo producto en función de los datos enviados en el cuerpo de la solicitud (name, price, stock, is_active).
-El id no lo pongo porque se genera de manera automática con el randomUUID.
+Creará un nuevo producto en función de los datos enviados en el cuerpo de la solicitud (id,name, price, stock, is_active).
 
-const { name, price, stock, is_active } = req.body;
+const { id, name, price, stock, is_active } = req.body;
 const newProduct = {
-id: randomUUID(),
+id,
 name,
 price,
 stock,
@@ -111,27 +110,39 @@ res.status(201).json(newProduct);
 
 Primero tengo que buscar si existe, lo hago por id porque es único
 const { id } = req.params;
-const productIndex = products.findIndex((p) => p.id === id);
+
+Uso el método find para buscar un producto en el array products cuyo campo id coincida con el valor extraído de la URL.
+const product = products.find((p) => p.id === id);
+
 Si el producto existe, actualizo solo los campos proporcionados en el cuerpo de la solicitud (req.body).
-El producto actual
-...products[productIndex], Producto actual
-Sobrescribe los campos con los datos del cuerpo de la solicitud y actualizop la fecha de modificación
-...req.body,
-updated_at: new Date(),
-Luego tiene que volver a poner el nuevo producto en el array
-products[productIndex] = updatedProduct;
-Si no lo encuentra lanzo un error
+Se sobrescribe/añade el campo updated_at con la fecha y hora actual (new Date()).
+if (product) {
+Object.assign(product, req.body, { updated_at: new Date() });
+res.json(product); aqui devuelve el producto actualizado en formato JSON
+
+Si el producto con el id especificado no existe, lanzo un error
 res.status(404).send('Producto no encontrado');
 
 ### delete/products/:id
 
-Para borrar un producto también busco por el id.
+Por último, para borrar un producto también busco por el id.
 const { id } = req.params;
 const productIndex = products.findIndex((p) => p.id === id);
 
-Si existe, lo elimino del array products con splice y lo devuelve como respuesta, en clase siempre decíamos que queríamos informar que se había borrado.
-const [removedProduct] = products.splice(productIndex, 1);
-res.json(removedProduct);
+Aquí el findIndex recorre el array products y devuelve el índice del primer producto cuyo id coincida con el id extraído.
+const index = products.findIndex((p) => p.id === id);
+Si no encuentra un producto con ese id, devuelve -1.
 
-Si no se encuentra, devuelve un error 404.
-res.status(404).send('Producto no encontrado'); // Error si no se encuentra
+Comprueba si index es diferente de -1. Esto indica que existe un producto con ese id.
+Si no existe (index === -1), se pasa al bloque else.
+if (index !== -1) {
+
+Elimino el producto con splice del array products en el índice especificado (index).
+Devuelve un array con el elemento eliminado, que se guarda en removedProduct.
+const removedProduct = products.splice(index, 1);
+
+Como decíamos en clase, vamos a enviarle una respuesta al cliente con un mensaje de confirmación ('Producto eliminado') para que sepa que todo ha ido bien
+res.json({ message: 'Producto eliminado', product: removedProduct[0] });
+
+El else nos lleva al mensaje de error si no se ha podido encontrar y borrar.
+res.status(404).send('Producto no encontrado');

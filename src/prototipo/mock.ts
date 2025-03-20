@@ -1,50 +1,47 @@
-import { randomUUID } from 'crypto'; // Importo el módulo crypto para generar UUID
-
 // Datos simulados para la base de datos en memoria
 export const products = [
   {
-    id: randomUUID(), // Generación de un UUID único
-    name: 'Alicate',
-    price: 100,
-    stock: 10,
+    id: '1',
+    name: 'Manzana',
+    price: 3,
+    stock: 100,
     is_active: true,
-    created_at: new Date('2025-03-01T10:00:00'),
-    updated_at: new Date('2025-03-01T10:00:00'),
+    created_at: new Date('2024-01-28'),
+    updated_at: new Date('2025-03-21'),
   },
   {
-    id: randomUUID(), // Generación de un UUID único
-    name: 'Destornillador',
-    price: 200,
-    stock: 5,
+    id: '2',
+    name: 'Pera',
+    price: 2,
+    stock: 135,
     is_active: false,
-    created_at: new Date('2025-03-02T11:00:00'),
-    updated_at: new Date('2025-03-02T11:00:00'),
+    created_at: new Date('2021-10-14'),
+    updated_at: new Date('2022-03-02'),
   },
   {
-    id: randomUUID(), // Generación de un UUID único
-    name: 'Martillo',
-    price: 50,
+    id: '3',
+    name: 'Naranja',
+    price: 4,
     stock: 20,
     is_active: true,
-    created_at: new Date('2025-03-03T12:00:00'),
-    updated_at: new Date('2025-03-03T12:00:00'),
+    created_at: new Date('2024-01-10'),
+    updated_at: new Date('2025-03-20'),
   },
   {
-    id: randomUUID(), // Generación de un UUID único
-    name: 'Alcayata',
+    id: '4',
     price: 1,
     stock: 500,
     is_active: true,
-    created_at: new Date('2025-03-03T12:00:00'),
-    updated_at: new Date('2025-03-03T12:00:00'),
+    created_at: new Date('2025-01-10'),
+    updated_at: new Date('2025-03-10'),
   },
   {
-    id: randomUUID(), // Generación de un UUID único
-    name: 'Escofina',
-    price: 78,
-    stock: 3,
+    id: '5',
+    name: 'Chirimoya',
+    price: 5,
+    stock: 30,
     is_active: false,
-    created_at: new Date('2025-03-03T12:00:00'),
-    updated_at: new Date('2025-03-03T12:00:00'),
+    created_at: new Date('2024-11-09'),
+    updated_at: new Date('2024-11-11'),
   },
 ];

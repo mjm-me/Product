@@ -1,3 +1,7 @@
+# avoid critical data
+
+.env
+
 # Logs
 
 logs
